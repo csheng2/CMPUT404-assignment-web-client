@@ -47,7 +47,8 @@ class HTTPClient(object):
     def get_code(self, data):
         headers = self.get_headers(data)
         request_line = headers[0]
-        return request_line.split()[1]
+        code = request_line.split()[1]
+        return int (code)
 
     def get_headers(self, data):
         return data.split("\r\n")
@@ -81,7 +82,6 @@ class HTTPClient(object):
                 done = not part
         return buffer.decode('utf-8')
 
-    # to edit
     def GET(self, url, args=None):
         # urlparse returns a ParseResult object
         # Example:
@@ -106,10 +106,6 @@ class HTTPClient(object):
         code = self.get_code(response)
         body = self.get_body(response)
 
-        print("=================")
-        print("CODE: ", code)
-        print("BODY: ", body)
-        print("================")
         return HTTPResponse(code, body)
 
     # to edit

@@ -33,7 +33,11 @@ class HTTPResponse(object):
         self.body = body
 
 class HTTPClient(object):
-    #def get_host_port(self,url):
+    def get_host_port(self,url):
+        pr = urllib.parse.urlparse(url)
+        netloc = pr.netloc
+        (host, port) = netloc.split(":")
+        return (host, int(port))
 
     def connect(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -41,13 +45,23 @@ class HTTPClient(object):
         return None
 
     def get_code(self, data):
-        return None
+        headers = self.get_headers(data)
+        request_line = headers[0]
+        return request_line.split()[1]
 
-    def get_headers(self,data):
-        return None
+    def get_headers(self, data):
+        return data.split("\r\n")
 
     def get_body(self, data):
-        return None
+        return data.split("\r\n\r\n")[1]
+
+    def send_request(self, url, request):
+        (host, port) = self.get_host_port(url)
+        self.connect(host, port)
+        self.sendall(request)
+        response = self.recvall(self.socket)
+        self.close()
+        return response
     
     def sendall(self, data):
         self.socket.sendall(data.encode('utf-8'))
@@ -67,12 +81,41 @@ class HTTPClient(object):
                 done = not part
         return buffer.decode('utf-8')
 
+    # to edit
     def GET(self, url, args=None):
-        code = 500
-        body = ""
+        # urlparse returns a ParseResult object
+        # Example:
+        # ParseResult(scheme='http', netloc='127.0.0.1:27629', path='/',
+        #   params='', query='', fragment='') 
+        pr = urllib.parse.urlparse(url)
+
+        request = ""
+        
+        if(args is None):
+            request += f"GET {pr.path} HTTP/1.1\r\n"
+        else:
+            query_string = urllib.parse.urlencode(args)
+            request += f"GET {pr.path}?{query_string} HTTP/1.1\r\n"
+    
+        request += f"Host: {pr.netloc}\r\n"
+        request += f"User-Agent: Mozilla/5.0\r\n"
+        request += f"Connection: close\r\n"
+        request += "\r\n"
+
+        response = self.send_request(url, request)
+        code = self.get_code(response)
+        body = self.get_body(response)
+
+        print("=================")
+        print("CODE: ", code)
+        print("BODY: ", body)
+        print("================")
         return HTTPResponse(code, body)
 
+    # to edit
     def POST(self, url, args=None):
+        o = urllib.parse.urlparse(url)
+
         code = 500
         body = ""
         return HTTPResponse(code, body)

@@ -39,10 +39,12 @@ class HTTPResponse(object):
 
 class HTTPClient(object):
     def get_host_port(self,url):
-        pr = urllib.parse.urlparse(url)
-        netloc = pr.netloc
-        (host, port) = netloc.split(":")
-        return (host, int(port))
+        parse_result = urllib.parse.urlparse(url)
+        host = parse_result.hostname
+        port = parse_result.port
+        if port is None:
+            port = 80
+        return (host, port)
 
     def connect(self, host, port):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -91,12 +93,15 @@ class HTTPClient(object):
         parse_result = urllib.parse.urlparse(url)
 
         request = ""
+        path = parse_result.path
+        if len(path) <= 0:
+            path = "/"
         
         if(args is None):
-            request += f"GET {parse_result.path} HTTP/1.1\r\n"
+            request += f"GET {path} HTTP/1.1\r\n"
         else:
             query_string = urllib.parse.urlencode(args)
-            request += f"GET {parse_result.path}?{query_string} HTTP/1.1\r\n"
+            request += f"GET {path}?{query_string} HTTP/1.1\r\n"
     
         request += f"Host: {parse_result.netloc}\r\n"
         request += f"User-Agent: Mozilla/5.0\r\n"
@@ -113,8 +118,11 @@ class HTTPClient(object):
         parse_result = urllib.parse.urlparse(url)
 
         request_body = ""
+        path = parse_result.path
+        if len(path) <= 0:
+            path = "/"
 
-        request = f"POST {parse_result.path} HTTP/1.1\r\n"
+        request = f"POST {path} HTTP/1.1\r\n"
         if args is not None:
             request_body = urllib.parse.urlencode(args)
         

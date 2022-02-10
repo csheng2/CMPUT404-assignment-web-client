@@ -113,7 +113,6 @@ class HTTPClient(object):
 
         return HTTPResponse(code, body)
 
-    # to edit
     def POST(self, url, args=None):
         parse_result = urllib.parse.urlparse(url)
 

@@ -24,6 +24,11 @@ import re
 # you may use urllib to encode data appropriately
 import urllib.parse
 
+# urllib.parse.urlparse returns a ParseResult object
+# Example:
+# ParseResult(scheme='http', netloc='127.0.0.1:27629', path='/',
+#   params='', query='', fragment='') 
+
 def help():
     print("httpclient.py [GET/POST] [URL]\n")
 
@@ -83,24 +88,19 @@ class HTTPClient(object):
         return buffer.decode('utf-8')
 
     def GET(self, url, args=None):
-        # urlparse returns a ParseResult object
-        # Example:
-        # ParseResult(scheme='http', netloc='127.0.0.1:27629', path='/',
-        #   params='', query='', fragment='') 
-        pr = urllib.parse.urlparse(url)
+        parse_result = urllib.parse.urlparse(url)
 
         request = ""
         
         if(args is None):
-            request += f"GET {pr.path} HTTP/1.1\r\n"
+            request += f"GET {parse_result.path} HTTP/1.1\r\n"
         else:
             query_string = urllib.parse.urlencode(args)
-            request += f"GET {pr.path}?{query_string} HTTP/1.1\r\n"
+            request += f"GET {parse_result.path}?{query_string} HTTP/1.1\r\n"
     
-        request += f"Host: {pr.netloc}\r\n"
+        request += f"Host: {parse_result.netloc}\r\n"
         request += f"User-Agent: Mozilla/5.0\r\n"
-        request += f"Connection: close\r\n"
-        request += "\r\n"
+        request += f"Connection: close\r\n\r\n"
 
         response = self.send_request(url, request)
         code = self.get_code(response)
@@ -110,10 +110,24 @@ class HTTPClient(object):
 
     # to edit
     def POST(self, url, args=None):
-        o = urllib.parse.urlparse(url)
+        parse_result = urllib.parse.urlparse(url)
 
-        code = 500
-        body = ""
+        request_body = ""
+
+        request = f"POST {parse_result.path} HTTP/1.1\r\n"
+        if args is not None:
+            request_body = urllib.parse.urlencode(args)
+        
+        request += f"Host: {parse_result.netloc}\r\n"
+        request += f"User-Agent: Mozilla/5.0\r\n"
+        request += f"Content-Type: application/x-www-form-urlencoded\r\n"
+        request += f"Content-Length: {len(request_body)}\r\n"
+        request += f"Connection: close\r\n\r\n"
+        request += request_body + "\r\n\r\n"        
+
+        response = self.send_request(url, request)
+        code = self.get_code(response)
+        body = self.get_body(response)
         return HTTPResponse(code, body)
 
     def command(self, url, command="GET", args=None):
